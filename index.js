@@ -1,10 +1,10 @@
 
 const express = require('express');
 const request = require('request');
-const Parser = require('rss-parser');
-const parser = new Parser();
 
 const app = express();
+
+const { parseFeed } = require('./xmlParser');
 
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", '*');
@@ -20,12 +20,9 @@ const asyncRequest = (url) => {
           return res.status(500).json({ type: 'error', message: err.message });
         }
         // console.log('body', body);
-        // console.log('response', response);
-        // res.send(body);
-        parser.parseString(body).then((parsed) => {
-          console.log(parsed);
-          resolve(parsed);
-        });
+        // console.log('body', response);
+
+        resolve(parseFeed(body));
       }
     )
   });
@@ -33,7 +30,7 @@ const asyncRequest = (url) => {
 
 app.get('', async (req, res) => {
   let url;
-  console.log(req.query);
+  // console.log(req.query);
   switch (req.query.source) {
     case '1':
       url = 'https://www.onliner.by/feed';
@@ -49,10 +46,8 @@ app.get('', async (req, res) => {
       url = 'https://www.onliner.by/feed';
       break;
   }
-  const pars1 = await asyncRequest('https://www.onliner.by/feed');
-  const pars2 = await asyncRequest('https://news.tut.by/rss');
-  const pars3 = await asyncRequest('https://naviny.by/rss/alls.xml');
-  res.send({ pars1, pars2, pars3 });
+  const pars1 = await asyncRequest(url);
+  res.send(pars1);
 });
 
 const PORT = process.env.PORT || 3000;
