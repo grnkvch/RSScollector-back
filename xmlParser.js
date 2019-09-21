@@ -2,19 +2,15 @@ const { get } = require('lodash');
 
 const parseString = require('xml2js').parseString;
 
-function dataConditioner(parsedXML) {
-  // let searchStop = 0;
+function dataConditioner(parsedXML, sourceTitle = '') {
+  console.log('parsedXML', parsedXML);
   let obj = {};
   try {
     const {
       title: [title],
       link: [link],
       pubDate: [pubDate],
-      description: [description],
-      // 'media:thumbnail': [{ '$': { url: thumbnail } }],
     } = parsedXML;
-
-    console.dir(parsedXML);
 
     const thumbnail = get(parsedXML, ['media:thumbnail', '0', '$', 'url'], '')
       || get(parsedXML, ['media:content', '0', '$', 'url'], '');
@@ -23,7 +19,8 @@ function dataConditioner(parsedXML) {
       title,
       link,
       pubDate,
-      thumbnail
+      thumbnail,
+      sourceTitle
     }
   } catch (error) {
     console.dir(parsedXML);
@@ -34,11 +31,11 @@ function dataConditioner(parsedXML) {
   return obj;
 }
 
-function parseFeed(feed) {
+function parseFeed(feed, sourceTitle = '') {
   let items;
   parseString(feed, function (err, result) {
     items = result.rss.channel[0].item.map((item) => {
-      return dataConditioner(item);
+      return dataConditioner(item, sourceTitle);
     });
   });
   return items;

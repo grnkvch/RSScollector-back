@@ -2,6 +2,7 @@
 const express = require('express');
 const request = require('request');
 
+
 const app = express();
 
 const { parseFeed } = require('./xmlParser');
@@ -11,43 +12,52 @@ app.use((req, res, next) => {
   next();
 });
 
-const asyncRequest = (url) => {
+const asyncRequest = (url, sourceTitle = '') => {
   return new Promise(resolve => {
     request(
       { url },
       (error, response, body) => {
         if (error || response.statusCode !== 200) {
-          return res.status(500).json({ type: 'error', message: err.message });
+          resolve({ error: response.status(500).json({ type: 'error', message: err.message }) });
         }
-        // console.log('body', body);
-        // console.log('body', response);
 
-        resolve(parseFeed(body));
+        resolve({ body: parseFeed(body, sourceTitle) });
       }
     )
   });
 }
 
 app.get('', async (req, res) => {
-  let url;
-  // console.log(req.query);
-  switch (req.query.source) {
-    case '1':
-      url = 'https://www.onliner.by/feed';
-      break;
-    case '2':
-      url = 'https://news.tut.by/rss';
-      break;
-    case '3':
-      url = 'https://naviny.by/rss/alls.xml';
-      break;
 
-    default:
-      url = 'https://www.onliner.by/feed';
-      break;
+  let data = [];
+
+  for (const item of req.query.source) {
+    let url;
+    let sourceTitle;
+    switch (item) {
+      case '1':
+        url = 'https://www.onliner.by/feed';
+        sourceTitle = 'onliner'
+        break;
+      case '2':
+        url = 'https://news.tut.by/rss';
+        sourceTitle = 'TUT.BY'
+        break;
+      case '3':
+        url = 'https://naviny.by/rss/alls.xml';
+        sourceTitle = 'NAVINY.BY'
+        break;
+
+      default:
+        url = '';
+        break;
+    }
+    if (!url) continue;
+    const chunk = await asyncRequest(url, sourceTitle);
+    data.push(...chunk.body)
   }
-  const pars1 = await asyncRequest(url);
-  res.send(pars1);
+
+  res.send(data.sort((a, b) => Date.parse(b.pubDate) - Date.parse(a.pubDate)));
 });
 
 const PORT = process.env.PORT || 3000;
