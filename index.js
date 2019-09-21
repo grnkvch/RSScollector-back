@@ -18,7 +18,7 @@ const asyncRequest = (url, sourceTitle = '') => {
       { url },
       (error, response, body) => {
         if (error || response.statusCode !== 200) {
-          resolve({ error: response.status(500).json({ type: 'error', message: err.message }) });
+          resolve({ error: response.status(500).json({ type: 'error', message: error.message }) });
         }
 
         resolve({ body: parseFeed(body, sourceTitle) });
@@ -30,7 +30,10 @@ const asyncRequest = (url, sourceTitle = '') => {
 app.get('', async (req, res) => {
 
   let data = [];
-
+  if (!req.query.source || !Array.isArray(req.query.source)) {
+    res.send([]);
+    return;
+  };
   for (const item of req.query.source) {
     let url;
     let sourceTitle;

@@ -3,7 +3,6 @@ const { get } = require('lodash');
 const parseString = require('xml2js').parseString;
 
 function dataConditioner(parsedXML, sourceTitle = '') {
-  console.log('parsedXML', parsedXML);
   let obj = {};
   try {
     const {
