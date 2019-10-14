@@ -27,40 +27,57 @@ const asyncRequest = (url, sourceTitle = '') => {
   });
 }
 
+
+const sources = new Map(
+  [
+    ['onliner', 'https://www.onliner.by/feed'],
+    ['TUT.BY', 'https://news.tut.by/rss'],
+    ['NAVINY.BY', 'https://naviny.by/rss/alls.xml'],
+  ]
+)
+
+
 app.get('', async (req, res) => {
 
   let data = [];
+  console.log('req.query.source', req.query.source);
+
   if (!req.query.source || !Array.isArray(req.query.source)) {
-    res.send([]);
+    res.send(data);
     return;
   };
   for (const item of req.query.source) {
     let url;
     let sourceTitle;
-    switch (item) {
-      case '1':
-        url = 'https://www.onliner.by/feed';
-        sourceTitle = 'onliner'
-        break;
-      case '2':
-        url = 'https://news.tut.by/rss';
-        sourceTitle = 'TUT.BY'
-        break;
-      case '3':
-        url = 'https://naviny.by/rss/alls.xml';
-        sourceTitle = 'NAVINY.BY'
-        break;
+    // switch (item) {
+    //   case 'onliner':
+    //     url = 'https://www.onliner.by/feed';
+    //     sourceTitle = 'onliner'
+    //     break;
+    //   case 'tutby':
+    //     url = 'https://news.tut.by/rss';
+    //     sourceTitle = 'TUT.BY'
+    //     break;
+    //   case 'navinyby':
+    //     url = 'https://naviny.by/rss/alls.xml';
+    //     sourceTitle = 'NAVINY.BY'
+    //     break;
 
-      default:
-        url = '';
-        break;
-    }
-    if (!url) continue;
-    const chunk = await asyncRequest(url, sourceTitle);
+    //   default:
+    //     url = '';
+    //     break;
+    // }
+    // if (!url) continue;
+    const chunk = await asyncRequest(sources.get(item), item);
     data.push(...chunk.body)
   }
 
   res.send(data.sort((a, b) => Date.parse(b.pubDate) - Date.parse(a.pubDate)));
+});
+
+app.get('/get-sources', async (req, res) => {
+  const sourcesList = [...sources.keys()];
+  res.send(sourcesList);
 });
 
 const PORT = process.env.PORT || 3000;
