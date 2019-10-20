@@ -30,9 +30,15 @@ const asyncRequest = (url, sourceTitle = '') => {
 
 const sources = new Map(
   [
-    ['onliner', 'https://www.onliner.by/feed'],
-    ['TUT.BY', 'https://news.tut.by/rss'],
-    ['NAVINY.BY', 'https://naviny.by/rss/alls.xml'],
+    ['onliner.by', [
+      'https://people.onliner.by/feed',
+      'https://auto.onliner.by/feed',
+      'https://tech.onliner.by/feed',
+      'https://realt.onliner.by/feed'
+    ]
+    ],
+    ['tut.by', 'https://news.tut.by/rss'],
+    ['naviny.by', 'https://naviny.by/rss/alls.xml'],
   ]
 )
 
@@ -40,36 +46,22 @@ const sources = new Map(
 app.get('', async (req, res) => {
 
   let data = [];
-  console.log('req.query.source', req.query.source);
-
   if (!req.query.source || !Array.isArray(req.query.source)) {
     res.send(data);
     return;
   };
   for (const item of req.query.source) {
-    let url;
-    let sourceTitle;
-    // switch (item) {
-    //   case 'onliner':
-    //     url = 'https://www.onliner.by/feed';
-    //     sourceTitle = 'onliner'
-    //     break;
-    //   case 'tutby':
-    //     url = 'https://news.tut.by/rss';
-    //     sourceTitle = 'TUT.BY'
-    //     break;
-    //   case 'navinyby':
-    //     url = 'https://naviny.by/rss/alls.xml';
-    //     sourceTitle = 'NAVINY.BY'
-    //     break;
-
-    //   default:
-    //     url = '';
-    //     break;
-    // }
-    // if (!url) continue;
-    const chunk = await asyncRequest(sources.get(item), item);
-    data.push(...chunk.body)
+    const sourceLink = sources.get(item);
+    if (Array.isArray(sourceLink)) {
+      console.log('sourceLink', sourceLink);
+      for (const link of sourceLink) {
+        const chunk = await asyncRequest(link, item);
+        data.push(...chunk.body)
+      }
+    } else {
+      const chunk = await asyncRequest(sourceLink, item);
+      data.push(...chunk.body)
+    }
   }
 
   res.send(data.sort((a, b) => Date.parse(b.pubDate) - Date.parse(a.pubDate)));
@@ -80,5 +72,5 @@ app.get('/get-sources', async (req, res) => {
   res.send(sourcesList);
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => console.log(`listening on ${PORT}`));
